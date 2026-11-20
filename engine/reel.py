@@ -230,6 +230,25 @@ def prep_image(im):
     return im.crop((x0, y0, x0 + cw, y0 + ch)).resize((W, H), Image.LANCZOS)
 
 
+def stitch(top_path, bottom_path, out, width=1080, height=1920):
+    """Junta 2 capturas (topo e fim) do navegador na nuvem com a imagem em 100%."""
+    import numpy as np
+    a = np.asarray(Image.open(top_path).convert("RGB")).astype(np.int16)
+    b = np.asarray(Image.open(bottom_path).convert("RGB")).astype(np.int16)
+    # acha a faixa horizontal da imagem (fora o fundo escuro do visualizador e a barra de rolagem)
+    col = a.mean(axis=(0, 2)); xs = np.where(col > 40)[0]
+    x0 = int(xs[0]) if len(xs) else 0
+    if x0 + width > a.shape[1]: x0 = max(0, a.shape[1] - width)
+    a = a[:, x0:x0 + width]; b = b[:, x0:x0 + width]
+    h = a.shape[0]; best, off = 1e9, height - h
+    for o in range(max(1, height - h - 40), min(h, height - h + 40) + 1):  # confirma a sobreposição
+        n = min(200, h - o); d = np.abs(a[o:o + n] - b[:n]).mean() if n >= 8 else 1e9
+        if d < best: best, off = d, o
+    full = np.concatenate([a[:off], b], 0)[:height]
+    Image.fromarray(full.astype(np.uint8)).save(out, quality=95)
+    print("ok", out, full.shape[1], "x", full.shape[0], "sobreposicao", off, "erro", round(float(best), 2))
+
+
 def load(spec_path, with_spec=False):
     spec = json.load(open(spec_path, encoding="utf-8"))
     base = os.path.dirname(os.path.abspath(spec_path))
@@ -283,5 +302,6 @@ if __name__ == "__main__":
     cmd = sys.argv[1]
     if cmd == "prep": prep_image(Image.open(sys.argv[2])).save(sys.argv[3], quality=95); print("ok", sys.argv[3])
     elif cmd == "check": check(sys.argv[2], sys.argv[3])
+    elif cmd == "stitch": stitch(sys.argv[2], sys.argv[3], sys.argv[4])
     elif cmd == "render": render(sys.argv[2], sys.argv[3])
     else: print(__doc__)
