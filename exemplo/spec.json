@@ -1,0 +1,264 @@
+{
+ "scenes": [
+  {
+   "image": "s1.jpg",
+   "dur": 3.6,
+   "zoom": [
+    1.0,
+    1.1
+   ],
+   "center": [
+    [
+     0.5,
+     0.42
+    ],
+    [
+     0.5,
+     0.4
+    ]
+   ],
+   "items": [
+    {
+     "type": "card",
+     "lines": [
+      [
+       [
+        "Você também",
+        "ink"
+       ]
+      ],
+      [
+       [
+        "perde venda",
+        "grad"
+       ]
+      ],
+      [
+       [
+        "no Direct?",
+        "ink"
+       ]
+      ]
+     ],
+     "size": 92,
+     "x": 70,
+     "y": 120,
+     "t": 0.1
+    },
+    {
+     "type": "pill",
+     "style": "notif",
+     "text": "Nova mensagem",
+     "x": "right",
+     "y": 980,
+     "t": 1.1
+    },
+    {
+     "type": "pill",
+     "style": "notif",
+     "text": "Nova mensagem",
+     "x": "right",
+     "y": 1110,
+     "t": 1.45
+    },
+    {
+     "type": "pill",
+     "style": "notif",
+     "text": "Nova mensagem",
+     "x": "right",
+     "y": 1240,
+     "t": 1.8
+    }
+   ]
+  },
+  {
+   "image": "s2.jpg",
+   "dur": 3.8,
+   "zoom": [
+    1.12,
+    1.02
+   ],
+   "center": [
+    [
+     0.45,
+     0.45
+    ],
+    [
+     0.5,
+     0.5
+    ]
+   ],
+   "items": [
+    {
+     "type": "card",
+     "lines": [
+      [
+       [
+        "Enquanto você",
+        "ink"
+       ]
+      ],
+      [
+       [
+        "atende…",
+        "ink"
+       ]
+      ]
+     ],
+     "size": 84,
+     "x": 70,
+     "y": 150,
+     "t": 0.1
+    },
+    {
+     "type": "card",
+     "lines": [
+      [
+       [
+        "…o cliente ",
+        "ink"
+       ],
+       [
+        "desiste.",
+        "grad"
+       ]
+      ]
+     ],
+     "size": 84,
+     "x": 70,
+     "y": "below",
+     "t": 1.5
+    }
+   ]
+  },
+  {
+   "image": "s3.jpg",
+   "dur": 3.8,
+   "zoom": [
+    1.0,
+    1.09
+   ],
+   "center": [
+    [
+     0.5,
+     0.4
+    ],
+    [
+     0.5,
+     0.36
+    ]
+   ],
+   "items": [
+    {
+     "type": "card",
+     "lines": [
+      [
+       [
+        "Com o ",
+        "ink"
+       ],
+       [
+        "Auto Insta",
+        "grad"
+       ]
+      ],
+      [
+       [
+        "comentários e Direct",
+        "ink"
+       ]
+      ],
+      [
+       [
+        "respondidos sozinhos,",
+        "ink"
+       ]
+      ],
+      [
+       [
+        "24h por dia.",
+        "grad"
+       ]
+      ]
+     ],
+     "size": 70,
+     "x": 60,
+     "y": 140,
+     "t": 0.1
+    },
+    {
+     "type": "pill",
+     "style": "ok",
+     "text": "respondido",
+     "x": "center",
+     "y": 1440,
+     "t": 1.7,
+     "size": 46
+    }
+   ]
+  },
+  {
+   "image": "s4.jpg",
+   "dur": 3.6,
+   "zoom": [
+    1.0,
+    1.06
+   ],
+   "vignette": false,
+   "items": [
+    {
+     "type": "card",
+     "lines": [
+      [
+       [
+        "Comentou ",
+        "ink"
+       ],
+       [
+        "QUERO",
+        "grad"
+       ],
+       [
+        "?",
+        "ink"
+       ]
+      ]
+     ],
+     "size": 84,
+     "x": "center",
+     "y": 120,
+     "t": 0.1
+    },
+    {
+     "type": "card",
+     "lines": [
+      [
+       [
+        "O link chega no",
+        "ink"
+       ]
+      ],
+      [
+       [
+        "Direct na hora.",
+        "grad"
+       ]
+      ]
+     ],
+     "size": 76,
+     "x": "center",
+     "y": 1400,
+     "t": 1.2,
+     "align": "center"
+    }
+   ]
+  },
+  {
+   "end": true,
+   "dur": 4.0,
+   "title": "Comente QUERO",
+   "subtitle": "e teste 7 dias grátis",
+   "footer": "sem cartão · autoinsta.com.br"
+  }
+ ]
+}
