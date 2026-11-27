@@ -8,7 +8,9 @@ Uso:
   python3 engine/reel.py check <spec.json> <contato.jpg>
       Gera um quadro de conferência com 1 frame de cada cena (rápido).
   python3 engine/reel.py render <spec.json> <saida.mp4>
-      Renderiza o vídeo final (1080x1920, 30 fps, H.264 + áudio silencioso).
+      Renderiza o vídeo final (1080x1920, 30 fps, H.264 + trilha e efeitos).
+  python3 engine/reel.py bg '<json do fundo>' <saida.jpg>
+      Mostra como fica um fundo gráfico, ex.: '{"color":"#E4002B","accent":"#FFC72C","style":"rays"}'.
 
 Formato do spec (JSON):
 {
@@ -19,12 +21,23 @@ Formato do spec (JSON):
        {"type": "pill", "style": "notif", "text": "Nova mensagem", "x": "right", "y": 980, "t": 1.1},
        {"type": "pill", "style": "ok", "text": "respondido", "x": "center", "y": 1440, "t": 1.7}
      ]},
-    {"end": true, "dur": 4.0, "title": "Comente QUERO", "subtitle": "e teste 7 dias grátis", "footer": "sem cartão · autoinsta.com.br"}
+    {"bg": {"color": "#E4002B", "accent": "#FFC72C", "style": "rays"}, "dur": 3.8,
+     "items": [
+       {"type": "sticker", "text": "CURIOSIDADE", "bg": "accent", "fg": "ink", "x": 70, "y": 170, "t": 0.05, "angle": -4},
+       {"type": "big", "lines": [[["POR QUE O","white"]], [["MÉQUI","accent"]], [["MUDOU DE NOME?","white"]]],
+        "font": "Anton", "size": 170, "align": "center", "x": "center", "y": 330, "t": 0.2, "anim": "slam", "shadow": "#000000"}
+     ]},
+    {"end": true, "dur": 4.0, "title": "Comente QUERO", "subtitle": "e teste 7 dias grátis", "footer": "autoinsta.com.br"}
   ]
 }
-Estilos de texto em "lines": "ink" (quase preto), "grad" (degradê da marca), "white".
+Cena com foto: "image". Cena gráfica (sem foto, não precisa de navegador): "bg" com
+  "color" (cor do fundo), "accent" (cor de contraste) e "style": plain | rays | dots | stripes | grid | split | blob.
+Estilos de texto em "lines": "ink" (quase preto), "grad" (degradê da marca), "white", "accent", "bg" ou uma cor "#RRGGBB".
 Card: "align" left|center, "size" (padrão 80). Posição x: número, "center" ou "right". Posição y: número ou "below" (logo abaixo do item anterior).
+Big (texto gigante sem card): "font" Anton | Archivo | Black | ExtraBold, "size", "align", "shadow" (cor da sombra dura, opcional),
+  "anim" slam | pop | up. Sticker (etiqueta inclinada): "text", "bg", "fg", "angle", "size".
 Pill styles: "notif" (branca com bolinha rosa), "ok" (verde com check), "dark" (preta).
+Fim: "bg" (cor sólida, opcional; sem ela usa o degradê da marca) e "accent".
 Zona segura do Reels: texto entre y=110 e y=1500; nada colado na direita entre y=1100 e 1700.
 """
 import json, os, subprocess, sys
@@ -41,8 +54,33 @@ GRAD = [(255, 138, 0), (255, 61, 127), (162, 59, 240)]
 GREEN = (10, 166, 83)
 
 
+FONT_FILES = {"Anton": "Anton-Regular.ttf", "Archivo": "ArchivoBlack-Regular.ttf"}
+_FCACHE = {}
 def font(w, s):
-    return ImageFont.truetype(os.path.join(FONTS, f"Poppins-{w}.ttf"), s)
+    key = (w, s)
+    if key not in _FCACHE:
+        _FCACHE[key] = ImageFont.truetype(os.path.join(FONTS, FONT_FILES.get(w, f"Poppins-{w}.ttf")), s)
+    return _FCACHE[key]
+
+
+def rgb(c, default=(255, 255, 255)):
+    """Cor em "#RRGGBB", lista [r,g,b] ou nome (ink, white, black)."""
+    if isinstance(c, (list, tuple)): return tuple(int(v) for v in c[:3])
+    if isinstance(c, str):
+        if c.startswith("#") and len(c) == 7: return tuple(int(c[i:i + 2], 16) for i in (1, 3, 5))
+        return {"ink": INK, "white": (255, 255, 255), "black": (11, 11, 11)}.get(c, default)
+    return default
+
+
+def luma(c):
+    r, g, b = rgb(c); return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+
+def shade(c, k):
+    """k<0 escurece, k>0 clareia."""
+    r, g, b = rgb(c)
+    if k < 0: return tuple(int(v * (1 + k)) for v in (r, g, b))
+    return tuple(int(v + (255 - v) * k) for v in (r, g, b))
 
 
 def ease_out(t):
@@ -67,14 +105,16 @@ def gradient(w, h):
     return g
 
 
-def text_line(parts, size, weight="ExtraBold"):
+def text_line(parts, size, weight="ExtraBold", palette=None):
     f = font(weight, size)
+    palette = palette or {}
     widths = [f.getlength(t) for t, _ in parts]
     asc, desc = f.getmetrics()
     lw, lh = int(sum(widths)) + 4, asc + desc
     img = Image.new("RGBA", (lw, lh), (0, 0, 0, 0))
     x = 0
     for (t, st), wd in zip(parts, widths):
+        st = palette.get(st, st)
         if st == "grad":
             mask = Image.new("L", (lw, lh), 0)
             ImageDraw.Draw(mask).text((x, 0), t, font=f, fill=255)
@@ -83,10 +123,93 @@ def text_line(parts, size, weight="ExtraBold"):
             layer.putalpha(mask)
             img = Image.alpha_composite(img, layer)
         else:
-            col = INK if st == "ink" else (255, 255, 255)
-            ImageDraw.Draw(img).text((x, 0), t, font=f, fill=col + (255,))
+            ImageDraw.Draw(img).text((x, 0), t, font=f, fill=rgb(st) + (255,))
         x += wd
     return img
+
+
+def big(lines, size=150, align="center", weight="Anton", shadow=None, palette=None, gap=None):
+    """Texto gigante sem card (estilo manchete), com sombra dura opcional."""
+    imgs = [text_line([tuple(p) for p in l], size, weight, palette) for l in lines]
+    if weight == "Anton":  # Anton tem respiro grande em cima e embaixo: corta para as linhas ficarem juntas
+        imgs = [i.crop((0, int(i.height * 0.10), i.width, int(i.height * 0.92))) for i in imgs]
+    gap = int(size * 0.02) if gap is None else gap
+    off = max(6, size // 14) if shadow else 0
+    w = max(i.width for i in imgs) + off
+    h = sum(i.height for i in imgs) + gap * (len(imgs) - 1) + off
+    txt = Image.new("RGBA", (w, h), (0, 0, 0, 0)); y = 0
+    for i in imgs:
+        x = 0 if align == "left" else (w - off - i.width) // 2
+        txt.alpha_composite(i, (x, y)); y += i.height + gap
+    if not shadow: return txt
+    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    sh = Image.new("RGBA", (w, h), rgb(shadow) + (255,)); sh.putalpha(txt.getchannel("A"))
+    out.alpha_composite(sh, (off, off)); out.alpha_composite(txt)
+    return out
+
+
+def sticker(text, bg="#FFC72C", fg="ink", size=46, angle=-4, weight="Archivo", palette=None):
+    """Etiqueta inclinada (ex.: CURIOSIDADE, EM ALTA, URGENTE)."""
+    palette = palette or {}
+    bgc, fgc = rgb(palette.get(bg, bg)), rgb(palette.get(fg, fg))
+    f = font(weight, size); asc, desc = f.getmetrics()
+    tw = int(f.getlength(text)); padx, pady = int(size * 0.7), int(size * 0.38)
+    w, h = tw + padx * 2, asc + desc + pady * 2
+    tag = Image.new("RGBA", (w + 16, h + 16), (0, 0, 0, 0)); d = ImageDraw.Draw(tag)
+    d.rounded_rectangle((10, 10, w + 10, h + 10), 14, fill=(0, 0, 0, 110))
+    d.rounded_rectangle((2, 2, w + 2, h + 2), 14, fill=bgc + (255,))
+    d.text((2 + padx, 2 + pady), text, font=f, fill=fgc + (255,))
+    return tag.rotate(angle, resample=Image.BICUBIC, expand=True) if angle else tag
+
+
+def make_bg(b, seed=1, size=None):
+    """Fundo gráfico de alto contraste (sem foto). b = {"color","accent","style"}."""
+    import random
+    import numpy as np
+    rnd = random.Random(seed)
+    SW, SH = size or (int(W * 1.35), int(H * 1.35))
+    col, acc = rgb(b.get("color", "#E4002B")), rgb(b.get("accent", "#FFC72C"))
+    style = b.get("style", "plain")
+    im = Image.new("RGB", (SW, SH), col); d = ImageDraw.Draw(im, "RGBA")
+    cx, cy = SW / 2, SH * 0.45
+    dark = luma(col) < 0.5
+    tone = shade(col, 0.10 if dark else -0.10)
+    if style == "rays":
+        n = 28; R = SW * 2
+        import math
+        for k in range(n):
+            if k % 2: continue
+            a0, a1 = 2 * math.pi * k / n, 2 * math.pi * (k + 1) / n
+            d.polygon([(cx, cy), (cx + R * math.cos(a0), cy + R * math.sin(a0)), (cx + R * math.cos(a1), cy + R * math.sin(a1))], fill=tone + (255,))
+    elif style == "dots":
+        step = 64
+        for yy in range(0, SH + step, step):
+            for xx in range((yy // step % 2) * step // 2, SW + step, step):
+                r = 4 + 16 * (yy / SH)
+                d.ellipse((xx - r, yy - r, xx + r, yy + r), fill=acc + (90,))
+    elif style == "stripes":
+        wdt = 110
+        for k in range(-SH, SW + SH, wdt * 2):
+            d.polygon([(k, 0), (k + wdt, 0), (k + wdt + SH * 0.6, SH), (k + SH * 0.6, SH)], fill=tone + (255,))
+    elif style == "grid":
+        step = 90; c = acc + (55,)
+        for xx in range(0, SW, step): d.line([(xx, 0), (xx, SH)], fill=c, width=3)
+        for yy in range(0, SH, step): d.line([(0, yy), (SW, yy)], fill=c, width=3)
+    elif style == "split":
+        d.polygon([(0, SH * 0.62), (SW, SH * 0.38), (SW, SH), (0, SH)], fill=acc + (255,))
+    elif style == "blob":
+        layer = Image.new("RGBA", (SW, SH), (0, 0, 0, 0)); dl = ImageDraw.Draw(layer)
+        for _ in range(5):
+            r = rnd.uniform(0.25, 0.5) * SW; x, y = rnd.uniform(0, SW), rnd.uniform(0, SH)
+            dl.ellipse((x - r, y - r, x + r, y + r), fill=acc + (110,))
+        im.paste(layer.filter(ImageFilter.GaussianBlur(140)), (0, 0), layer.filter(ImageFilter.GaussianBlur(140)))
+    # luz suave no centro + granulado leve (tira a cara de "cor chapada")
+    glow = Image.new("L", (SW, SH), 0)
+    ImageDraw.Draw(glow).ellipse((cx - SW * 0.55, cy - SW * 0.55, cx + SW * 0.55, cy + SW * 0.55), fill=60)
+    im = Image.composite(Image.new("RGB", (SW, SH), shade(col, 0.25)), im, glow.filter(ImageFilter.GaussianBlur(200)))
+    a = np.asarray(im).astype(np.int16)
+    noise = np.random.default_rng(seed).integers(-7, 8, size=(SH, SW, 1))
+    return Image.fromarray(np.clip(a + noise, 0, 255).astype(np.uint8))
 
 
 def card(lines, size=80, align="left"):
@@ -150,8 +273,9 @@ def kenburns(src, u, z0, z1, c0, c1):
 def place(frame, layer, t, t0, x, y, anim="up", dur=0.45):
     if t < t0: return
     k = (t - t0) / dur
-    if anim == "pop":
-        s = 0.6 + 0.4 * ease_back(k); a = min(1, k * 2.5)
+    if anim in ("pop", "slam"):
+        if anim == "pop": s = 0.6 + 0.4 * ease_back(k); a = min(1, k * 2.5)
+        else: s = 1.55 - 0.55 * ease_out(k * 1.4); a = min(1, k * 3.0)  # entra grande e "bate" no lugar
         lay = layer if abs(s - 1) < 1e-3 else layer.resize((max(1, int(layer.width * s)), max(1, int(layer.height * s))), Image.BILINEAR)
         px, py = int(x + (layer.width - lay.width) / 2), int(y + (layer.height - lay.height) / 2)
     else:
@@ -177,22 +301,40 @@ class Scene:
             ImageDraw.Draw(lc).rounded_rectangle((0, 0, lc.width - 1, lc.height - 1), 48, fill=(255, 255, 255, 255))
             lc.alpha_composite(logo, (60, 45))
             self.logo = lc
-            self.t1 = text_line([(spec.get("title", "Comente QUERO"), "white")], 104)
-            self.t2 = text_line([(spec.get("subtitle", "e teste 7 dias grátis"), "white")], 66, "SemiBold")
-            self.t3 = pill(spec.get("footer", "sem cartão · autoinsta.com.br"), "dark", 40)
-            self.bg = gradient(W, H).convert("RGBA")
+            tc = "ink" if spec.get("bg") and luma(spec["bg"]) > 0.6 else "white"
+            self.t1 = text_line([(spec.get("title", "Comente QUERO"), tc)], 104)
+            self.t2 = text_line([(spec.get("subtitle", "e teste 7 dias grátis"), tc)], 66, "SemiBold")
+            self.t3 = pill(spec.get("footer", "autoinsta.com.br"), "dark", 40)
+            if spec.get("bg"):
+                self.bg = make_bg({"color": spec["bg"], "accent": spec.get("accent", "#FFFFFF"), "style": spec.get("style", "rays")},
+                                  7, (W, H)).convert("RGBA")
+            else:
+                self.bg = gradient(W, H).convert("RGBA")
             self.events = [(0.10, spec.get("sfx_logo", "logo")), (1.20, "pop")]
         else:
-            p = spec["image"]; p = p if os.path.isabs(p) else os.path.join(base, p)
-            im = Image.open(p).convert("RGB")
-            if im.size != (W, H): im = prep_image(im)
-            self.src = im.resize((int(W * 1.35), int(H * 1.35)), Image.LANCZOS)
+            if spec.get("image"):
+                p = spec["image"]; p = p if os.path.isabs(p) else os.path.join(base, p)
+                im = Image.open(p).convert("RGB")
+                if im.size != (W, H): im = prep_image(im)
+                self.src = im.resize((int(W * 1.35), int(H * 1.35)), Image.LANCZOS)
+                vig_default = True; pal = {}
+            else:  # cena gráfica: fundo gerado aqui mesmo, sem foto e sem navegador
+                b = spec.get("bg", {})
+                self.src = make_bg(b, int(spec.get("seed", 1)))
+                vig_default = False
+                pal = {"accent": b.get("accent", "#FFC72C"), "bg": b.get("color", "#E4002B")}
             self.zoom = spec.get("zoom", [1.0, 1.08]); c = spec.get("center", [[0.5, 0.5], [0.5, 0.5]])
             self.c0, self.c1 = c[0], c[1]
-            self.vig = vignette() if spec.get("vignette", True) else None
+            self.vig = vignette() if spec.get("vignette", vig_default) else None
             self.items = []; last = None; self.events = []
             for it in spec.get("items", []):
                 if it["type"] == "card": lay = card(it["lines"], it.get("size", 80), it.get("align", "left")); anim = it.get("anim", "up")
+                elif it["type"] == "big":
+                    lay = big(it["lines"], it.get("size", 150), it.get("align", "center"), it.get("font", "Anton"),
+                              it.get("shadow"), pal); anim = it.get("anim", "slam")
+                elif it["type"] == "sticker":
+                    lay = sticker(it["text"], it.get("bg", "accent"), it.get("fg", "ink"), it.get("size", 46),
+                                  it.get("angle", -4), it.get("font", "Archivo"), pal); anim = it.get("anim", "pop")
                 else: lay = pill(it["text"], it.get("style", "dark"), it.get("size", 44)); anim = it.get("anim", "pop")
                 y = it.get("y", 120)
                 if y == "below": y = (last[0] + last[1] - 34) if last else 120  # logo abaixo do item anterior
@@ -304,4 +446,5 @@ if __name__ == "__main__":
     elif cmd == "check": check(sys.argv[2], sys.argv[3])
     elif cmd == "stitch": stitch(sys.argv[2], sys.argv[3], sys.argv[4])
     elif cmd == "render": render(sys.argv[2], sys.argv[3])
+    elif cmd == "bg": make_bg(json.loads(sys.argv[2]), 1, (W, H)).save(sys.argv[3], quality=92); print("ok", sys.argv[3])
     else: print(__doc__)

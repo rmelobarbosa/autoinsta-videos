@@ -1,0 +1,27 @@
+{
+ "audio": {"seed": 331},
+ "scenes": [
+  {"bg": {"color": "#0B0B0B", "accent": "#F5FF3B", "style": "grid"}, "dur": 3.6, "zoom": [1.0, 1.07],
+   "items": [
+    {"type": "sticker", "text": "CURIOSIDADE DE MARKETING", "bg": "accent", "fg": "ink", "x": 70, "y": 200, "t": 0.05, "angle": -3},
+    {"type": "big", "lines": [[["POR QUE TODO","white"]], [["MUNDO PEDE","white"]], [["PRA VOCÊ","white"]], [["COMENTAR?","accent"]]],
+     "font": "Anton", "size": 190, "align": "left", "x": 70, "y": 340, "t": 0.25, "shadow": "#3A3A00"}
+   ]},
+  {"bg": {"color": "#1F3BFF", "accent": "#FFFFFF", "style": "rays"}, "dur": 4.0, "zoom": [1.04, 1.0],
+   "items": [
+    {"type": "big", "lines": [[["COMENTÁRIO","white"]], [["É SINAL","white"]], [["DE INTERESSE","accent"]]],
+     "font": "Anton", "size": 175, "align": "center", "x": "center", "y": 260, "t": 0.1, "shadow": "#0A1F44"},
+    {"type": "card", "lines": [[["O algoritmo entende:","ink"]], [["esse post ", "ink"], ["vale a pena","grad"]]], "size": 64, "align": "center",
+     "x": "center", "y": 1010, "t": 1.0}
+   ]},
+  {"bg": {"color": "#FF2E88", "accent": "#0B0B0B", "style": "dots"}, "dur": 4.2,
+   "items": [
+    {"type": "big", "lines": [[["E QUEM","white"]], [["COMENTA","white"]], [["QUER","accent"]], [["O LINK","accent"]]],
+     "font": "Anton", "size": 200, "align": "center", "x": "center", "y": 230, "t": 0.1, "shadow": "#7A0038"},
+    {"type": "pill", "style": "notif", "text": "comentou QUERO", "x": 120, "y": 1270, "t": 1.2},
+    {"type": "pill", "style": "ok", "text": "link enviado no Direct", "x": "center", "y": 1410, "t": 1.9}
+   ]},
+  {"end": true, "dur": 4.0, "bg": "#0B0B0B", "accent": "#FF2E88", "style": "rays",
+   "title": "Comente QUERO", "subtitle": "e teste 7 dias grátis", "footer": "autoinsta.com.br"}
+ ]
+}

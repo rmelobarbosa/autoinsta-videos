@@ -5,13 +5,22 @@ Os vídeos ficam em `videos/` e o Metricool agenda a partir do link público
 `https://raw.githubusercontent.com/rmelobarbosa/autoinsta-videos/main/videos/<arquivo>.mp4`.
 
 ## Como um vídeo é feito
-1. As cenas (fotos com pessoas) são geradas no Canva no formato "Instagram Story" (1080x1920), **sem texto**.
-2. Cada cena é capturada pelo navegador do app do Claude e ajustada com `python3 engine/reel.py prep <captura> <cena.jpg>`.
-3. Um `spec.json` descreve as cenas, os textos animados e o card final (veja `exemplo/spec.json` e o topo de `engine/reel.py`).
-4. `python3 engine/reel.py check spec.json conferir.jpg` gera um quadro para conferir os textos.
-5. `python3 engine/reel.py render spec.json videos/AAAA-MM-DD-tema.mp4` gera o vídeo (1080x1920, 30 fps, ~15–25 s, sem música).
+Há dois tipos de cena, e dá para misturar no mesmo vídeo:
 
-Requisitos: Python 3 com Pillow, ffmpeg. Fontes Poppins (licença OFL) em `assets/fonts/`.
+**Cena gráfica (padrão, não depende de navegador):** fundo de cor forte gerado pelo próprio motor
+(`"bg": {"color": "#E4002B", "accent": "#FFC72C", "style": "rays"}` — estilos `plain`, `rays`, `dots`,
+`stripes`, `grid`, `split`, `blob`) com texto gigante animado (`"type": "big"`, fontes Anton, Archivo Black
+ou Poppins Black/ExtraBold, sombra dura opcional) e etiquetas inclinadas (`"type": "sticker"`).
+Veja `exemplo/grafico.json`. Para ver só um fundo: `python3 engine/reel.py bg '{"color":"#1F3BFF","accent":"#FFFFFF","style":"rays"}' fundo.jpg`.
+
+**Cena com foto:** a foto (1080x1920, sem texto) vem do Canva, capturada pelo navegador na nuvem
+(`engine/reel.py stitch`) ou ajustada com `engine/reel.py prep`. Veja `exemplo/spec.json`.
+
+Depois:
+1. `python3 engine/reel.py check spec.json conferir.jpg` gera um quadro para conferir os textos.
+2. `python3 engine/reel.py render spec.json videos/AAAA-MM-DD-tema.mp4` gera o vídeo (1080x1920, 30 fps, ~15–25 s, com trilha e efeitos).
+
+Requisitos: Python 3 com Pillow e numpy, ffmpeg. Fontes Poppins, Anton e Archivo Black (licença OFL) em `assets/fonts/`.
 
 ## Som (automático)
 Todo vídeo sai com **trilha sonora original** (gerada por código, sem direitos autorais) e **efeitos sonoros sincronizados** com as animações:
