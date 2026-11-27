@@ -35,7 +35,10 @@ Cena com foto: "image". Cena gráfica (sem foto, não precisa de navegador): "bg
 Estilos de texto em "lines": "ink" (quase preto), "grad" (degradê da marca), "white", "accent", "bg" ou uma cor "#RRGGBB".
 Card: "align" left|center, "size" (padrão 80). Posição x: número, "center" ou "right". Posição y: número ou "below" (logo abaixo do item anterior).
 Big (texto gigante sem card): "font" Anton | Archivo | Black | ExtraBold, "size", "align", "shadow" (cor da sombra dura, opcional),
-  "anim" slam | pop | up. Sticker (etiqueta inclinada): "text", "bg", "fg", "angle", "size".
+  "anim" slam | pop | up, "stagger": 0.3 (cada linha entra separada, 0,3 s depois da outra).
+Sticker (etiqueta inclinada): "text", "bg", "fg", "angle", "size".
+Count (número que sobe animado): "to", "from" (0), "prefix", "suffix", "size" (260), "color" ("accent"), "shadow", "t", "dur" (1.2).
+Barra de progresso no topo: ligada por padrão; "progress": false no spec para desligar.
 Pill styles: "notif" (branca com bolinha rosa), "ok" (verde com check), "dark" (preta).
 Fim: "bg" (cor sólida, opcional; sem ela usa o degradê da marca) e "accent".
 Zona segura do Reels: texto entre y=110 e y=1500; nada colado na direita entre y=1100 e 1700.
@@ -326,8 +329,36 @@ class Scene:
             self.zoom = spec.get("zoom", [1.0, 1.08]); c = spec.get("center", [[0.5, 0.5], [0.5, 0.5]])
             self.c0, self.c1 = c[0], c[1]
             self.vig = vignette() if spec.get("vignette", vig_default) else None
-            self.items = []; last = None; self.events = []
+            self.items = []; last = None; self.events = []; self.counts = []
             for it in spec.get("items", []):
+                if it["type"] == "big" and it.get("stagger"):
+                    # cada linha entra separada, uma depois da outra (mais ritmo)
+                    y = it.get("y", 120)
+                    if y == "below": y = (last[0] + last[1] - 34) if last else 120
+                    y = int(y); t0 = float(it.get("t", 0.1)); gap = int(it.get("size", 150) * 0.02)
+                    for k, line in enumerate(it["lines"]):
+                        lay = big([line], it.get("size", 150), it.get("align", "center"), it.get("font", "Anton"), it.get("shadow"), pal)
+                        tk = t0 + k * float(it["stagger"])
+                        self.items.append((lay, tk, resolve_x(it.get("x", "center"), lay), y, it.get("anim", "slam")))
+                        self.events.append((tk + 0.02, it.get("sfx", "pop")))
+                        y += lay.height + gap
+                    last = (y - gap, 0)
+                    continue
+                if it["type"] == "count":
+                    # número que sobe animado (só números que estão nas fontes!)
+                    fmt = lambda v, it=it: it.get("prefix", "") + f"{int(round(v)):,}".replace(",", ".") + it.get("suffix", "")
+                    mk = lambda txt, it=it: big([[(txt, it.get("color", "accent"))]], it.get("size", 260), "center",
+                                                it.get("font", "Anton"), it.get("shadow"), pal)
+                    final = mk(fmt(it["to"]))
+                    y = it.get("y", 600)
+                    if y == "below": y = (last[0] + last[1] - 34) if last else 600
+                    y = int(y); last = (y, final.height)
+                    cx = resolve_x(it.get("x", "center"), final) + final.width // 2
+                    t0 = float(it.get("t", 0.2)); dur = float(it.get("dur", 1.2))
+                    self.counts.append(dict(fmt=fmt, mk=mk, frm=float(it.get("from", 0)), to=float(it["to"]), t0=t0, dur=dur,
+                                            cx=cx, y=y, cache={}))
+                    self.events.append((t0 + 0.02, "whoosh")); self.events.append((t0 + dur, it.get("sfx", "success")))
+                    continue
                 if it["type"] == "card": lay = card(it["lines"], it.get("size", 80), it.get("align", "left")); anim = it.get("anim", "up")
                 elif it["type"] == "big":
                     lay = big(it["lines"], it.get("size", 150), it.get("align", "center"), it.get("font", "Anton"),
@@ -360,6 +391,13 @@ class Scene:
         if self.vig: f.alpha_composite(self.vig)
         for lay, t0, x, y, anim in self.items:
             place(f, lay, t, t0, x, y, anim, 0.45 if anim == "up" else 0.35)
+        for c in self.counts:
+            if t < c["t0"]: continue
+            v = c["frm"] + (c["to"] - c["frm"]) * ease_out((t - c["t0"]) / c["dur"])
+            txt = c["fmt"](v)
+            if txt not in c["cache"]: c["cache"][txt] = c["mk"](txt)
+            lay = c["cache"][txt]
+            place(f, lay, t, c["t0"], c["cx"] - lay.width // 2, c["y"], "pop", 0.3)
         return f.convert("RGB")
 
 
@@ -401,11 +439,19 @@ def load(spec_path, with_spec=False):
 def render(spec_path, out):
     scenes, spec = load(spec_path, True); stem = os.path.splitext(out)[0]; tmpdir = stem + "_parts"; os.makedirs(tmpdir, exist_ok=True)
     files = []
+    total = sum(int(round(sc.dur * FPS)) for sc in scenes); done = 0
+    bar = spec.get("progress", True)  # barrinha de progresso no topo: segura a pessoa até o fim
     for n, sc in enumerate(scenes):
         N = int(round(sc.dur * FPS)); fn = os.path.join(tmpdir, f"scene{n}.mp4"); part = os.path.join(tmpdir, f"scene{n}.tmp.mp4")
         p = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
                               "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-r", str(FPS), part], stdin=subprocess.PIPE)
-        for i in range(N): p.stdin.write(sc.frame(i, N).tobytes())
+        for i in range(N):
+            fr = sc.frame(i, N)
+            if bar and not sc.end:
+                d = ImageDraw.Draw(fr); d.rectangle((0, 0, W, 11), fill=(0, 0, 0))
+                d.rectangle((0, 0, int(W * (done + i + 1) / total), 11), fill=(255, 255, 255))
+            p.stdin.write(fr.tobytes())
+        done += N
         p.stdin.close()
         if p.wait() != 0: sys.exit(f"falhou na cena {n}")
         os.replace(part, fn); files.append(fn)

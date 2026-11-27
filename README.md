@@ -11,7 +11,9 @@ Há dois tipos de cena, e dá para misturar no mesmo vídeo:
 (`"bg": {"color": "#E4002B", "accent": "#FFC72C", "style": "rays"}` — estilos `plain`, `rays`, `dots`,
 `stripes`, `grid`, `split`, `blob`) com texto gigante animado (`"type": "big"`, fontes Anton, Archivo Black
 ou Poppins Black/ExtraBold, sombra dura opcional) e etiquetas inclinadas (`"type": "sticker"`).
-Veja `exemplo/grafico.json`. Para ver só um fundo: `python3 engine/reel.py bg '{"color":"#1F3BFF","accent":"#FFFFFF","style":"rays"}' fundo.jpg`.
+Veja `exemplo/grafico.json` e o modelo do quadro `exemplo/quadro-curiosidade.json`.
+Para dar ritmo: `"stagger": 0.25` no `big` faz cada linha entrar separada; `"type": "count"` faz um número subir animado
+(só números que estão nas fontes); a barra de progresso no topo vem ligada (`"progress": false` desliga). Para ver só um fundo: `python3 engine/reel.py bg '{"color":"#1F3BFF","accent":"#FFFFFF","style":"rays"}' fundo.jpg`.
 
 **Cena com foto:** a foto (1080x1920, sem texto) vem do Canva, capturada pelo navegador na nuvem
 (`engine/reel.py stitch`) ou ajustada com `engine/reel.py prep`. Veja `exemplo/spec.json`.

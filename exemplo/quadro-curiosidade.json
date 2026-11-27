@@ -1,0 +1,262 @@
+{
+ "_leia": "MODELO do quadro 'Curiosidade de Marketing' (caso de sucesso). Troque os textos entre colchetes. Só use números que estão nas fontes.",
+ "audio": {
+  "seed": 12
+ },
+ "scenes": [
+  {
+   "bg": {
+    "color": "#E4002B",
+    "accent": "#FFC72C",
+    "style": "rays"
+   },
+   "dur": 3.4,
+   "zoom": [
+    1.0,
+    1.08
+   ],
+   "items": [
+    {
+     "type": "sticker",
+     "text": "CURIOSIDADE DE MARKETING · EP. 1",
+     "bg": "accent",
+     "fg": "ink",
+     "x": 70,
+     "y": 330,
+     "t": 0.0,
+     "angle": -3,
+     "size": 40
+    },
+    {
+     "type": "big",
+     "lines": [
+      [
+       [
+        "COMO A",
+        "white"
+       ]
+      ],
+      [
+       [
+        "[MARCA]",
+        "accent"
+       ]
+      ],
+      [
+       [
+        "VIROU",
+        "white"
+       ]
+      ],
+      [
+       [
+        "FEBRE?",
+        "white"
+       ]
+      ]
+     ],
+     "font": "Anton",
+     "size": 200,
+     "align": "left",
+     "x": 70,
+     "y": 460,
+     "t": 0.15,
+     "stagger": 0.22,
+     "shadow": "#7A0010"
+    }
+   ]
+  },
+  {
+   "bg": {
+    "color": "#0B0B0B",
+    "accent": "#B6FF3B",
+    "style": "grid"
+   },
+   "dur": 4.0,
+   "items": [
+    {
+     "type": "sticker",
+     "text": "O PROBLEMA",
+     "bg": "accent",
+     "fg": "ink",
+     "x": 70,
+     "y": 360,
+     "t": 0.0,
+     "angle": 3
+    },
+    {
+     "type": "big",
+     "lines": [
+      [
+       [
+        "[CONTEXTO EM",
+        "white"
+       ]
+      ],
+      [
+       [
+        "POUCAS PALAVRAS]",
+        "white"
+       ]
+      ]
+     ],
+     "font": "Anton",
+     "size": 140,
+     "align": "left",
+     "x": 70,
+     "y": 500,
+     "t": 0.15,
+     "stagger": 0.3
+    }
+   ]
+  },
+  {
+   "bg": {
+    "color": "#1F3BFF",
+    "accent": "#FFFFFF",
+    "style": "stripes"
+   },
+   "dur": 4.0,
+   "items": [
+    {
+     "type": "sticker",
+     "text": "A SACADA",
+     "bg": "#FFC72C",
+     "fg": "ink",
+     "x": 70,
+     "y": 360,
+     "t": 0.0,
+     "angle": -3
+    },
+    {
+     "type": "big",
+     "lines": [
+      [
+       [
+        "[O QUE ELES",
+        "white"
+       ]
+      ],
+      [
+       [
+        "FIZERAM]",
+        "accent"
+       ]
+      ]
+     ],
+     "font": "Anton",
+     "size": 160,
+     "align": "left",
+     "x": 70,
+     "y": 500,
+     "t": 0.15,
+     "stagger": 0.3,
+     "shadow": "#0A1F44"
+    }
+   ]
+  },
+  {
+   "bg": {
+    "color": "#FFC72C",
+    "accent": "#0B0B0B",
+    "style": "dots"
+   },
+   "dur": 4.0,
+   "items": [
+    {
+     "type": "sticker",
+     "text": "O RESULTADO",
+     "bg": "#0B0B0B",
+     "fg": "white",
+     "x": 70,
+     "y": 360,
+     "t": 0.0,
+     "angle": 3
+    },
+    {
+     "type": "count",
+     "to": 300,
+     "prefix": "+",
+     "suffix": "%",
+     "color": "accent",
+     "size": 300,
+     "x": "center",
+     "y": 580,
+     "t": 0.3,
+     "dur": 1.3
+    },
+    {
+     "type": "big",
+     "lines": [
+      [
+       [
+        "[DO QUÊ, EM QUANTO TEMPO]",
+        "ink"
+       ]
+      ]
+     ],
+     "font": "Anton",
+     "size": 90,
+     "x": "center",
+     "y": 980,
+     "t": 1.4,
+     "anim": "up"
+    }
+   ]
+  },
+  {
+   "bg": {
+    "color": "#6B2CF5",
+    "accent": "#12D6B0",
+    "style": "blob"
+   },
+   "dur": 3.8,
+   "items": [
+    {
+     "type": "sticker",
+     "text": "LIÇÃO",
+     "bg": "accent",
+     "fg": "ink",
+     "x": 70,
+     "y": 360,
+     "t": 0.0,
+     "angle": -3
+    },
+    {
+     "type": "big",
+     "lines": [
+      [
+       [
+        "[A LIÇÃO PRA",
+        "white"
+       ]
+      ],
+      [
+       [
+        "QUEM VENDE]",
+        "accent"
+       ]
+      ]
+     ],
+     "font": "Anton",
+     "size": 160,
+     "align": "left",
+     "x": 70,
+     "y": 500,
+     "t": 0.15,
+     "stagger": 0.3
+    }
+   ]
+  },
+  {
+   "end": true,
+   "dur": 3.6,
+   "bg": "#0B0B0B",
+   "accent": "#FF2E88",
+   "style": "rays",
+   "title": "Siga pra mais",
+   "subtitle": "curiosidades de marketing",
+   "footer": "autoinsta.com.br"
+  }
+ ]
+}
